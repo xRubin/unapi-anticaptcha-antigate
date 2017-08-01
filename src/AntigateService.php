@@ -94,7 +94,7 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
      * @param string $id
      * @return PromiseInterface
      */
-    protected function checkReady($id): PromiseInterface
+    protected function checkReady(string $id): PromiseInterface
     {
         $this->logger->debug('Checking anticaptcha {id} ready', ['id' => $id]);
         return $this->client->requestAsync('POST', '/res.php', [
