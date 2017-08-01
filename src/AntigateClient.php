@@ -1,7 +1,9 @@
 <?php
 namespace unapi\anticaptcha\antigate;
 
-class Client extends \GuzzleHttp\Client
+use GuzzleHttp\Client;
+
+class AntigateClient extends Client
 {
     /**
      * @param array $config

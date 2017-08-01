@@ -1,4 +1,5 @@
 <?php
+
 namespace unapi\anticaptcha\antigate;
 
 use GuzzleHttp\Promise\FulfilledPromise;
@@ -15,7 +16,7 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
     /** @var array Api key */
     private $key;
 
-    /** @var Client */
+    /** @var AntigateClient */
     private $client;
 
     /** @var LoggerInterface */
@@ -33,11 +34,11 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
         }
 
         if (!isset($config['client'])) {
-            $this->client = new Client();
-        } elseif ($config['client'] instanceof Client) {
+            $this->client = new AntigateClient();
+        } elseif ($config['client'] instanceof AntigateClient) {
             $this->client = $config['client'];
         } else {
-            throw new \InvalidArgumentException('Invalid client');
+            throw new \InvalidArgumentException('Client must be instance of AntigateClient');
         }
 
         if (!isset($config['logger'])) {
@@ -72,7 +73,6 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
                     'method' => 'base64',
                     'key' => $this->key,
                     'body' => base64_encode($image),
-                    'ext' => 'jpg',
                 ],
                 $params
             )
@@ -97,6 +97,7 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
     protected function checkReady(string $id): PromiseInterface
     {
         $this->logger->debug('Checking anticaptcha {id} ready', ['id' => $id]);
+
         return $this->client->requestAsync('POST', '/res.php', [
             'form_params' => [
                 'key' => $this->key,
@@ -105,6 +106,7 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
             ],
         ])->then(function (ResponseInterface $response) use ($id) {
             $answer = $response->getBody()->getContents();
+
             $this->logger->debug('Task {id} status: {answer}', ['id' => $id, 'answer' => $answer]);
 
             if (substr($answer, 0, 5) === 'ERROR') {
