@@ -10,6 +10,9 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use unapi\anticaptcha\common\AnticaptchaServiceInterface;
+use unapi\anticaptcha\common\AnticaptchaTaskInterface;
+
+use function GuzzleHttp\json_decode;
 
 class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterface
 {
@@ -21,6 +24,15 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
 
     /** @var LoggerInterface */
     private $logger;
+
+    /** @var integer */
+    private $softId;
+
+    /** @var string */
+    private $languagePool = 'en';
+
+    /** @var integer */
+    private $retryCount = 20;
 
     /**
      * @param array $config Service configuration settings.
@@ -48,6 +60,18 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
         } else {
             throw new \InvalidArgumentException('Logger must be instance of LoggerInterface');
         }
+
+        if (isset($config['softId'])) {
+            $this->softId = $config['softId'];
+        }
+
+        if (isset($config['languagePool'])) {
+            $this->languagePool = $config['languagePool'];
+        }
+
+        if (isset($config['retryCount'])) {
+            $this->retryCount = $config['retryCount'];
+        }
     }
 
     /**
@@ -59,67 +83,111 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
     }
 
     /**
-     * @param string $image
-     * @param array $params
+     * @param AnticaptchaTaskInterface $task
      * @return PromiseInterface
      */
-    public function decodeImage(string $image, array $params = []): PromiseInterface
+    public function resolve(AnticaptchaTaskInterface $task): PromiseInterface
     {
         $this->logger->debug('Start antigate service');
 
-        return $this->client->requestAsync('POST', '/in.php', [
-            'form_params' => array_merge(
-                [
-                    'method' => 'base64',
-                    'key' => $this->key,
-                    'body' => base64_encode($image),
-                ],
-                $params
-            )
+        return $this->client->requestAsync('POST', '/createTask', [
+            'form_params' => [
+                'clientKey' => $this->key,
+                'task' => $task->asArray(),
+                'softId' => $this->softId,
+                'languagePool' => $this->languagePool
+            ]
         ])->then(function (ResponseInterface $response) {
             $answer = $response->getBody()->getContents();
 
             $this->logger->debug('Upload answer: {answer}', ['answer' => $answer]);
 
-            if (substr($answer, 0, 2) !== 'OK') {
-                $this->logger->debug('Rejected with answer: {answer}', ['answer' => $answer]);
-                return new RejectedPromise($answer);
+            $result = json_decode($answer);
+
+            if ($result->errorId) {
+                $this->logger->debug('Rejected with error {errorId}: {errorCode} - {errorDescription}', [
+                    'errorId' => $result->errorId,
+                    'errorCode' => $result->errorCode,
+                    'errorDescription' => $result->errorDescription,
+                ]);
+                return new RejectedPromise($result->errorDescription);
             }
 
-            return $this->checkReady(substr($answer, 3));
+            return $this->checkReady($result->taskId);
         });
     }
 
     /**
-     * @param string $id
      * @return PromiseInterface
      */
-    protected function checkReady(string $id): PromiseInterface
+    public function getBalance(): PromiseInterface
     {
-        $this->logger->debug('Checking anticaptcha {id} ready', ['id' => $id]);
+        $this->logger->debug('Obtain antigate balance');
 
-        return $this->client->requestAsync('POST', '/res.php', [
+        return $this->client->requestAsync('POST', '/getBalance', [
             'form_params' => [
-                'key' => $this->key,
-                'action' => 'get',
-                'id' => $id,
-            ],
-        ])->then(function (ResponseInterface $response) use ($id) {
+                'clientKey' => $this->key,
+            ]
+        ])->then(function (ResponseInterface $response) {
             $answer = $response->getBody()->getContents();
 
-            $this->logger->debug('Task {id} status: {answer}', ['id' => $id, 'answer' => $answer]);
+            $this->logger->debug('Balance answer: {answer}', ['answer' => $answer]);
 
-            if (substr($answer, 0, 5) === 'ERROR') {
-                $this->logger->debug('Rejected with answer: {answer}', ['answer' => $answer]);
-                return new RejectedPromise($answer);
+            $result = json_decode($answer);
+
+            if ($result->errorId) {
+                $this->logger->error('Rejected with error {errorId}: {errorCode} - {errorDescription}', [
+                    'errorId' => $result->errorId,
+                    'errorCode' => $result->errorCode,
+                    'errorDescription' => $result->errorDescription,
+                ]);
+                return new RejectedPromise($result->errorDescription);
             }
 
-            if (substr($answer, 0, 2) !== 'OK') {
-                $this->logger->debug('Retrying check task {id}', ['id' => $id]);
-                return $this->checkReady($id);
+            return $result->balance;
+        });
+    }
+
+    /**
+     * @param string $taskId
+     * @param integer $cnt
+     * @return PromiseInterface
+     */
+    protected function checkReady(string $taskId, integer $cnt = 0): PromiseInterface
+    {
+        if ($cnt > $this->retryCount)
+            return new RejectedPromise('Attempts exceeded');
+
+        $this->logger->debug('Checking anticaptcha {taskId} ready (attempt = {attempt})', ['taskId' => $taskId, 'attempt' => $cnt]);
+
+        return $this->client->requestAsync('POST', '/getTaskResult', [
+            'form_params' => [
+                'clientKey' => $this->key,
+                'taskId' => $taskId,
+            ],
+        ])->then(function (ResponseInterface $response) use ($taskId, $cnt) {
+            $answer = $response->getBody()->getContents();
+
+            $this->logger->debug('Task {taskId} status: {answer}', ['taskId' => $taskId, 'answer' => $answer]);
+
+            $result = json_decode($answer);
+
+            if ($result->errorId) {
+                $this->logger->error('Rejected with error {errorId}: {errorCode} - {errorDescription}', [
+                    'errorId' => $result->errorId,
+                    'errorCode' => $result->errorCode,
+                    'errorDescription' => $result->errorDescription,
+                ]);
+                return new RejectedPromise($result->errorDescription);
             }
 
-            return new FulfilledPromise(substr($answer, 3));
+            if ('processing' === $result->status) {
+                return $this->checkReady($taskId, ++$cnt);
+            }
+
+            if ('ready' === $result->status) {
+                return new FulfilledPromise($result->solution);
+            }
         });
     }
 }

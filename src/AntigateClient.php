@@ -10,7 +10,7 @@ class AntigateClient extends Client
      */
     public function __construct(array $config = [])
     {
-        $config['base_uri'] = 'http://antigate.com';
+        $config['base_uri'] = 'http://api.anti-captcha.com';
 
         if (!array_key_exists('delay', $config))
             $config['delay'] = 2000;
