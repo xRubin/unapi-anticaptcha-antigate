@@ -57,8 +57,9 @@ class ReCaptcha2Decorator implements AnticaptchaTaskInterface
             array_merge(
                 [
                     'type' => self::TYPE,
+                    'websiteURL' => $this->getTask()->getSiteUrl(),
+                    'websiteKey' => $this->getTask()->getSiteKey()
                 ],
-                $this->getTask()->asArray(),
                 $this->getOptions()
             ),
             function ($value) {
