@@ -114,7 +114,7 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
                 return new RejectedPromise($result->errorDescription);
             }
 
-            return $this->checkReady($result->taskId);
+            return $this->checkReady($result->taskId, 0);
         });
     }
 
@@ -154,7 +154,7 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
      * @param integer $cnt
      * @return PromiseInterface
      */
-    protected function checkReady(string $taskId, integer $cnt = 0): PromiseInterface
+    protected function checkReady(string $taskId, integer $cnt): PromiseInterface
     {
         if ($cnt > $this->retryCount)
             return new RejectedPromise('Attempts exceeded');
