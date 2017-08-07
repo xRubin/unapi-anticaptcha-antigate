@@ -84,16 +84,17 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
 
     /**
      * @param AnticaptchaTaskInterface $task
+     * @param array $options
      * @return PromiseInterface
      */
-    public function resolve(AnticaptchaTaskInterface $task): PromiseInterface
+    public function resolve(AnticaptchaTaskInterface $task, $options = []): PromiseInterface
     {
         $this->logger->debug('Start antigate service');
 
         return $this->client->requestAsync('POST', '/createTask', [
             'form_params' => [
                 'clientKey' => $this->key,
-                'task' => $task->asArray(),
+                'task' => AntigateFactory::decorate($task, $options)->asArray(),
                 'softId' => $this->softId,
                 'languagePool' => $this->languagePool
             ]
