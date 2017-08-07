@@ -25,13 +25,13 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
     /** @var LoggerInterface */
     private $logger;
 
-    /** @var integer */
+    /** @var int */
     private $softId;
 
     /** @var string */
     private $languagePool = 'en';
 
-    /** @var integer */
+    /** @var int */
     private $retryCount = 20;
 
     /**
@@ -151,10 +151,10 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
 
     /**
      * @param string $taskId
-     * @param integer $cnt
+     * @param int $cnt
      * @return PromiseInterface
      */
-    protected function checkReady(string $taskId, integer $cnt): PromiseInterface
+    protected function checkReady(string $taskId, int $cnt): PromiseInterface
     {
         if ($cnt > $this->retryCount)
             return new RejectedPromise('Attempts exceeded');
