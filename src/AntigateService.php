@@ -92,7 +92,7 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
         $this->logger->debug('Start antigate service');
 
         return $this->client->requestAsync('POST', '/createTask', [
-            'form_params' => [
+            'json' => [
                 'clientKey' => $this->key,
                 'task' => AntigateFactory::decorate($task, $options)->asArray(),
                 'softId' => $this->softId,
@@ -126,7 +126,7 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
         $this->logger->debug('Obtain antigate balance');
 
         return $this->client->requestAsync('POST', '/getBalance', [
-            'form_params' => [
+            'json' => [
                 'clientKey' => $this->key,
             ]
         ])->then(function (ResponseInterface $response) {
@@ -162,7 +162,7 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
         $this->logger->debug('Checking anticaptcha {taskId} ready (attempt = {attempt})', ['taskId' => $taskId, 'attempt' => $cnt]);
 
         return $this->client->requestAsync('POST', '/getTaskResult', [
-            'form_params' => [
+            'json' => [
                 'clientKey' => $this->key,
                 'taskId' => $taskId,
             ],
@@ -187,7 +187,7 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
             }
 
             if ('ready' === $result->status) {
-                return new FulfilledPromise($result->solution);
+                return new FulfilledPromise($result->solution->text);
             }
         });
     }
