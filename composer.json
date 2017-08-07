@@ -1,6 +1,6 @@
 {
     "name": "unapi/anticaptcha-antigate",
-    "description": "Unapi anticaptcha common classes",
+    "description": "Unapi http://antigate.com/ anticaptcha service wrapper",
     "keywords": ["unapi", "guzzle", "promise", "captcha", "anticaptcha", "antigate"],
     "type": "library",
     "minimum-stability": "stable",
