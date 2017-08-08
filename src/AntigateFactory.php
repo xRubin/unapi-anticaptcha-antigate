@@ -11,16 +11,15 @@ class AntigateFactory
 {
     /**
      * @param AnticaptchaTaskInterface $task
-     * @param array $options
      * @return AnticaptchaTaskInterface
      */
-    public static function decorate(AnticaptchaTaskInterface $task, $options = []): AnticaptchaTaskInterface
+    public static function decorate(AnticaptchaTaskInterface $task): AnticaptchaTaskInterface
     {
         if ($task instanceof ImageTask)
-            return new ImageTaskDecorator($task, $options);
+            return new ImageTaskDecorator($task);
 
         if ($task instanceof ReCaptcha2Task)
-            return new ReCaptcha2Decorator($task, $options);
+            return new ReCaptcha2Decorator($task);
 
         throw new \InvalidArgumentException('Unsupported task type');
     }

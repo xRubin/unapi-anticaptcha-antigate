@@ -11,17 +11,13 @@ class ReCaptcha2Decorator implements AnticaptchaTaskInterface
 
     /** @var ReCaptcha2Task */
     private $task;
-    /** @var array */
-    private $options = [];
 
     /**
      * @param ReCaptcha2Task $task
-     * @param array $options
      */
-    public function __construct(ReCaptcha2Task $task, $options = [])
+    public function __construct(ReCaptcha2Task $task)
     {
         $this->task = $task;
-        $this->options = $options;
     }
 
     /**
@@ -33,38 +29,14 @@ class ReCaptcha2Decorator implements AnticaptchaTaskInterface
     }
 
     /**
-     * @return array
-     */
-    public function getOptions(): array
-    {
-        return $this->options;
-    }
-
-    /**
-     * @param array $options
-     */
-    public function setOptions(array $options)
-    {
-        $this->options = $options;
-    }
-
-    /**
      * @return string[]
      */
     public function asArray(): array
     {
-        return array_filter(
-            array_merge(
-                [
-                    'type' => self::TYPE,
-                    'websiteURL' => $this->getTask()->getSiteUrl(),
-                    'websiteKey' => $this->getTask()->getSiteKey()
-                ],
-                $this->getOptions()
-            ),
-            function ($value) {
-                return !is_null($value);
-            }
-        );
+        return [
+            'type' => self::TYPE,
+            'websiteURL' => $this->getTask()->getSiteUrl(),
+            'websiteKey' => $this->getTask()->getSiteKey()
+        ];
     }
 }

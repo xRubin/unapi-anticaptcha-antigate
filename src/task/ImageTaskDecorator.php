@@ -11,17 +11,13 @@ class ImageTaskDecorator implements AnticaptchaTaskInterface
 
     /** @var ImageTask */
     private $task;
-    /** @var array */
-    private $options = [];
 
     /**
      * @param ImageTask $task
-     * @param array $options
      */
-    public function __construct(ImageTask $task, $options = [])
+    public function __construct(ImageTask $task)
     {
         $this->task = $task;
-        $this->options = $options;
     }
 
     /**
@@ -33,37 +29,16 @@ class ImageTaskDecorator implements AnticaptchaTaskInterface
     }
 
     /**
-     * @return array
-     */
-    public function getOptions(): array
-    {
-        return $this->options;
-    }
-
-    /**
-     * @param array $options
-     */
-    public function setOptions(array $options)
-    {
-        $this->options = $options;
-    }
-
-    /**
      * @return string[]
      */
     public function asArray(): array
     {
-        return array_filter(
-            array_merge(
-                [
-                    'type' => self::TYPE,
-                ],
-                $this->getTask()->asArray(),
-                $this->getOptions()
-            ),
-            function ($value) {
-                return !is_null($value);
-            }
-        );
+        return [
+            'type' => self::TYPE,
+            'body' => base64_encode($this->getTask()->getBody()),
+            'numeric' => $this->getTask()->getNumeric(),
+            'minLength' => $this->getTask()->getMinLength(),
+            'maxLength' => $this->getTask()->getMaxLength(),
+        ];
     }
 }
