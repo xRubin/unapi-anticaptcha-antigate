@@ -21,6 +21,6 @@ class AntigateFactory
         if ($task instanceof ReCaptcha2Task)
             return new ReCaptcha2Decorator($task);
 
-        throw new \InvalidArgumentException('Unsupported task type');
+        return $task;
     }
 }

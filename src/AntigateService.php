@@ -13,26 +13,25 @@ use unapi\anticaptcha\common\AnticaptchaServiceInterface;
 use unapi\anticaptcha\common\AnticaptchaTaskInterface;
 
 use function GuzzleHttp\json_decode;
+use unapi\anticaptcha\common\dto\CaptchaSolvedDto;
 
 class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterface
 {
     /** @var array Api key */
     private $key;
-
     /** @var AntigateClient */
     private $client;
-
     /** @var LoggerInterface */
     private $logger;
-
+    /** @var string */
+    private $responseClass = CaptchaSolvedDto::class;
     /** @var int */
     private $softId;
-
     /** @var string */
     private $languagePool = 'en';
-
     /** @var int */
     private $retryCount = 20;
+
 
     /**
      * @param array $config Service configuration settings.
@@ -60,6 +59,9 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
         } else {
             throw new \InvalidArgumentException('Logger must be instance of LoggerInterface');
         }
+
+        if (isset($config['responseClass']))
+            $this->responseClass = $config['responseClass'];
 
         if (isset($config['softId'])) {
             $this->softId = $config['softId'];
@@ -118,37 +120,6 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
     }
 
     /**
-     * @return PromiseInterface
-     */
-    public function getBalance(): PromiseInterface
-    {
-        $this->logger->debug('Obtain antigate balance');
-
-        return $this->client->requestAsync('POST', '/getBalance', [
-            'json' => [
-                'clientKey' => $this->key,
-            ]
-        ])->then(function (ResponseInterface $response) {
-            $answer = $response->getBody()->getContents();
-
-            $this->logger->debug('Balance answer: {answer}', ['answer' => $answer]);
-
-            $result = json_decode($answer);
-
-            if ($result->errorId) {
-                $this->logger->error('Rejected with error {errorId}: {errorCode} - {errorDescription}', [
-                    'errorId' => $result->errorId,
-                    'errorCode' => $result->errorCode,
-                    'errorDescription' => $result->errorDescription,
-                ]);
-                return new RejectedPromise($result->errorDescription);
-            }
-
-            return $result->balance;
-        });
-    }
-
-    /**
      * @param string $taskId
      * @param int $cnt
      * @return PromiseInterface
@@ -186,7 +157,9 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
             }
 
             if ('ready' === $result->status) {
-                return new FulfilledPromise($result->solution->text);
+                return new FulfilledPromise($this->responseClass::toDto([
+                    'code' => $result->solution->text
+                ]));
             }
         });
     }

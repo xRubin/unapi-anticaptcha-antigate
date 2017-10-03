@@ -5,9 +5,8 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use unapi\anticaptcha\antigate\AntigateClient;
 use unapi\anticaptcha\antigate\AntigateService;
-use unapi\anticaptcha\antigate\task\ImageTaskDecorator;
+use unapi\anticaptcha\common\dto\CaptchaSolvedDto;
 use unapi\anticaptcha\common\task\ImageTask;
-
 
 class AnticaptchaTest extends \PHPUnit_Framework_TestCase
 {
@@ -41,15 +40,13 @@ class AnticaptchaTest extends \PHPUnit_Framework_TestCase
         ]);
 
         $service->resolve(
-            new ImageTaskDecorator(
-                new ImageTask([
-                    'body' => file_get_contents(__DIR__ . '/fixtures/captcha/mf4azc.png'),
-                    'minLength' => 6,
-                    'maxLength' => 6,
-                ])
-            )
-        )->then(function ($code) {
-            $this->assertEquals('mf4azc', $code);
+            new ImageTask([
+                'body' => file_get_contents(__DIR__ . '/fixtures/captcha/mf4azc.png'),
+                'minLength' => 6,
+                'maxLength' => 6,
+            ])
+        )->then(function (CaptchaSolvedDto $solved) {
+            $this->assertEquals('mf4azc', $solved->getCode());
         })->wait();
     }
 }
