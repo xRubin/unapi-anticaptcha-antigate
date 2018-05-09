@@ -1,14 +1,15 @@
 <?php
 
+use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use unapi\anticaptcha\antigate\AntigateClient;
 use unapi\anticaptcha\antigate\AntigateService;
 use unapi\anticaptcha\common\dto\CaptchaSolvedDto;
-use unapi\anticaptcha\common\task\ImageTask;
+use unapi\anticaptcha\common\task\ReCaptcha2Task;
 
-class AnticaptchaTest extends \PHPUnit_Framework_TestCase
+class ResolveRecaptcha2Test extends TestCase
 {
     public function testResolveCaptcha()
     {
@@ -25,7 +26,7 @@ class AnticaptchaTest extends \PHPUnit_Framework_TestCase
                 'errorId' => 0,
                 'status' => 'ready',
                 'solution' => [
-                    'text' => 'mf4azc'
+                    'gRecaptchaResponse' => '3AHJ_VuvYIBNBW5yyv0zRYJ75VkOKvhKj9_xGBJKnQimF72rfoq3Iy-DyGHMwLAo6a3'
                 ],
                 'cost' => '0.000700',
                 'ip' => '127.0.0.1',
@@ -35,18 +36,18 @@ class AnticaptchaTest extends \PHPUnit_Framework_TestCase
         $service = new AntigateService([
             'key' => 'mocked',
             'client' => new AntigateClient([
+                'delay' => 0,
                 'handler' => HandlerStack::create($mock)
             ])
         ]);
 
         $service->resolve(
-            new ImageTask([
-                'body' => file_get_contents(__DIR__ . '/fixtures/captcha/mf4azc.png'),
-                'minLength' => 6,
-                'maxLength' => 6,
+            new ReCaptcha2Task([
+                'siteUrl' => 'http://mywebsite.com/recaptcha/test.php',
+                'siteKey' => '6Lc_aCMTAAAAABx7u2N0D1XnVbI_v6ZdbM6rYf16',
             ])
         )->then(function (CaptchaSolvedDto $solved) {
-            $this->assertEquals('mf4azc', $solved->getCode());
+            $this->assertEquals('3AHJ_VuvYIBNBW5yyv0zRYJ75VkOKvhKj9_xGBJKnQimF72rfoq3Iy-DyGHMwLAo6a3', $solved->getCode());
         })->wait();
     }
 }

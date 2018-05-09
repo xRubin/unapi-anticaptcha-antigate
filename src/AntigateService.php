@@ -158,7 +158,7 @@ class AntigateService implements AnticaptchaServiceInterface, LoggerAwareInterfa
 
             if ('ready' === $result->status) {
                 return new FulfilledPromise($this->responseClass::toDto([
-                    'code' => $result->solution->text
+                    'code' => $result->solution->text ?? $result->solution->gRecaptchaResponse
                 ]));
             }
         });

@@ -10,6 +10,9 @@
         "unapi/anticaptcha-common": "^1.2",
         "psr/log": "^1.0"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^6.5"
+    },
     "autoload" : {
         "psr-4": {
             "unapi\\anticaptcha\\antigate\\": "src"
