@@ -51,3 +51,35 @@ echo $service->resolve(
     ])
 )->wait()->getCode();
 ```
+
+## Распознавание Рекапчи2 от гугла c использованием прокси (NoCaptchaTask)
+| Параметр | Тип | Обязательный | Значение |
+|----------|-----|--------------|----------|
+| websiteURL | String | Да | Адрес страницы на которой решается капча |
+| websiteKey | String |	Да | Ключ-индентификатор рекапчи на целевой странице |
+| websiteSToken	| String | Нет | Секретный токен для предыдущей версии рекапчи. В большинстве случаев сайты используют новую версию и этот токен не требуется |
+| proxyType	| String | Да | 'http' - обычный http/https прокси, 'socks4' - socks4 прокси, 'socks5' - socks5 прокси |
+| proxyAddress | String	| Да| IP адрес прокси ipv4/ipv6 |
+| proxyPort	| Integer | Да | Порт прокси |
+| proxyLogin | String | Нет | Логин от прокси-сервера |
+| proxyPassword	| String | Нет | Пароль от прокси-сервера |
+| userAgent | String | Да | User-Agent браузера, используемый в эмуляции |
+| cookies | String	| Нет | Дополнительные cookies. Формат: cookiename1=cookievalue1; cookiename2=cookievalue2 |
+| isInvisible |	Boolean	| Нет | Указать что рекапча невидимая |
+```php
+<?php
+use unapi\anticaptcha\antigate\task\NoCaptchaTask;
+
+echo $service->resolve(
+   new NoCaptchaTask([
+                   'websiteURL' => 'http://mywebsite.com/recaptcha/test.php',
+                   'websiteKey' => '6Lc_aCMTAAAAABx7u2N0D1XnVbI_v6ZdbM6rYf16',
+                   'proxyType' => 'http',
+                   'proxyAddress' => '8.8.8.8',
+                   'proxyPort' => 8080,
+                   'proxyLogin' => 'proxyLoginHere',
+                   'proxyPassword' => 'proxyPasswordHere',
+                   'userAgent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36'
+               ])
+)->wait()->getCode();
+```
